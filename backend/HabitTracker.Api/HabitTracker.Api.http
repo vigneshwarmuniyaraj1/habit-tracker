@@ -1,0 +1,57 @@
+@HabitTracker.Api_HostAddress = http://localhost:5174
+@authToken = YOUR_JWT_TOKEN_HERE
+
+### 1. Register User
+POST {{HabitTracker.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test123"
+}
+
+### 2. Login User
+POST {{HabitTracker.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test123"
+}
+
+### 3. Create Habit (Requires Auth)
+POST {{HabitTracker.Api_HostAddress}}/api/habit
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Drink Water",
+  "category": "Health",
+  "frequencyType": 0,
+  "targetDays": [1, 2, 3, 4, 5, 6, 7]
+}
+
+### 4. Get All Habits (Requires Auth)
+GET {{HabitTracker.Api_HostAddress}}/api/habit
+Authorization: Bearer {{authToken}}
+
+### 5. Get Habit By ID (Requires Auth)
+GET {{HabitTracker.Api_HostAddress}}/api/habit/1
+Authorization: Bearer {{authToken}}
+
+### 6. Update Habit (Requires Auth)
+PUT {{HabitTracker.Api_HostAddress}}/api/habit/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Drink 3L Water",
+  "category": "Health",
+  "frequencyType": 0,
+  "targetDays": [1, 2, 3, 4, 5, 6, 7],
+  "isArchived": false
+}
+
+### 7. Delete Habit (Requires Auth)
+DELETE {{HabitTracker.Api_HostAddress}}/api/habit/1
+Authorization: Bearer {{authToken}}

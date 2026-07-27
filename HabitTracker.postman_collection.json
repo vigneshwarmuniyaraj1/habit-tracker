@@ -1,0 +1,274 @@
+{
+	"info": {
+		"name": "Habit Tracker API",
+		"description": "Postman collection for the Habit Tracker backend (C# + PostgreSQL).\n\nHOW TO USE:\n1. Run 'Register User' (or 'Login User' if already registered) first - this auto-saves your login token.\n2. Then use any request in the 'Habits' folder - the token gets attached automatically, no copy-paste needed.\n3. If you get a 401 Unauthorized error anywhere, it just means your token expired or you haven't logged in yet - just re-run Login.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5174",
+			"description": "Change this if dotnet run shows a different port in the terminal"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"description": "Auto-filled after Register/Login - used automatically by all Habit requests"
+		},
+		{
+			"key": "habitId",
+			"value": "",
+			"description": "Auto-filled after Create Habit - used automatically by Get One / Update / Delete requests"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Register and Login endpoints. Run one of these first to get a token.",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\"\n}\n// Creates a new user. If email already exists, this will fail on purpose - use Login instead."
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Success (200 OK) returns { token, email, userId }.\nFailure (400) if email already registered."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', jsonData.token);",
+									"    console.log('Token saved!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"test123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Success (200 OK) returns { token, email, userId }.\nFailure (401) if email/password wrong."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', jsonData.token);",
+									"    console.log('Token saved!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Habits",
+			"description": "All requests here need you to be logged in first (Auth folder). Token is attached automatically.",
+			"item": [
+				{
+					"name": "Create Habit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Drink Water\",\n  \"category\": \"Health\",\n  \"frequencyType\": 0,\n  \"targetDays\": [1, 2, 3, 4, 5, 6, 7]\n}\n// frequencyType: 0 = Daily, 1 = Weekly, 2 = Monthly, 3 = Custom\n// targetDays: 1=Mon ... 7=Sun"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/habit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"habit"
+							]
+						},
+						"description": "Creates a new habit for the logged-in user. Also auto-creates a Streak record (0/0) behind the scenes.\n\nSuccess (201 Created) returns the full habit object including its new id."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Save the new habit's id so Get One / Update / Delete below can use it automatically",
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('habitId', jsonData.id);",
+									"    console.log('Habit id saved:', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Get All Habits",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/habit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"habit"
+							]
+						},
+						"description": "Returns all non-archived habits belonging to the logged-in user."
+					}
+				},
+				{
+					"name": "Get One Habit",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/habit/{{habitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"habit",
+								"{{habitId}}"
+							]
+						},
+						"description": "Fetches one habit by id. habitId is auto-filled from 'Create Habit' above, or you can paste one manually."
+					}
+				},
+				{
+					"name": "Update Habit",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Drink Water (Updated)\",\n  \"category\": \"Health\",\n  \"frequencyType\": 0,\n  \"targetDays\": [1, 2, 3, 4, 5, 6, 7],\n  \"isArchived\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/habit/{{habitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"habit",
+								"{{habitId}}"
+							]
+						},
+						"description": "Edits an existing habit. Set isArchived to true to 'soft delete' (hide from Get All) without fully deleting it."
+					}
+				},
+				{
+					"name": "Delete Habit",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/habit/{{habitId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"habit",
+								"{{habitId}}"
+							]
+						},
+						"description": "Permanently deletes the habit (also deletes its HabitLogs and Streak automatically via cascade delete). Success returns 204 No Content."
+					}
+				}
+			]
+		}
+	]
+}
